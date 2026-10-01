@@ -1,0 +1,57 @@
+{
+	"terminal.integrated.profiles.windows": {
+		"Backend": {
+			"source": "Git Bash",
+			"args": [
+				"-c",
+				// Convert VS Code's Windows path (C:\...) into a Git Bash path (/c/...)
+				"cd \"$(cygpath -u '${workspaceFolder}')/backend\" && exec bash -i"
+			],
+			"overrideName": true,
+			"icon": "map-vertical-filled",
+			"color": "terminal.ansiMagenta"
+		},
+
+		"Frontend": {
+			"source": "Git Bash",
+			"args": [
+				"-c",
+				// Convert VS Code's Windows path (C:\...) into a Git Bash path (/c/...)
+				"cd \"$(cygpath -u '${workspaceFolder}')/frontend\" && exec bash -i"
+			],
+			"overrideName": true,
+			"icon": "star-full",
+			"color": "terminal.ansiYellow"
+		},
+
+		"Docker": {
+			"source": "Git Bash",
+			"args": [
+				"-c",
+				// Convert VS Code's Windows path (C:\...) into a Git Bash path (/c/...)
+				"cd \"$(cygpath -u '${workspaceFolder}')\" && exec bash -i"
+			],
+			"overrideName": true,
+			"icon": "layout-sidebar-left",
+			"color": "terminal.ansiBrightBlue"
+		},
+
+		"Git": {
+			"source": "Git Bash",
+			"args": [
+				"-c",
+				// Convert VS Code's Windows path (C:\...) into a Git Bash path (/c/...)
+				"cd \"$(cygpath -u '${workspaceFolder}')\" && exec bash -i"
+			],
+			"overrideName": true,
+			"icon": "circle-filled",
+			"color": "terminal.ansiGreen"
+		}
+	},
+
+	"workbench.colorCustomizations": {
+		"terminal.ansiMagenta": "#7814FF",
+		"terminal.ansiYellow": "#FDB20B",
+		"terminal.ansiBrightBlue": "#1E90FF"
+	}
+}
