@@ -10,3 +10,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Project versioning (`VERSION` file) and this changelog.
+- `control-api` Spring Boot service (Java 17, Spring Boot 4.1) with an Actuator health endpoint.
