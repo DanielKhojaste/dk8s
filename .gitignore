@@ -1,0 +1,34 @@
+# Personal planning notes (kept local, never published)
+notes/
+
+# Local environment / secrets (commit .env.example instead)
+.env
+.env.*
+!.env.example
+
+# Java / Maven build output
+target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+
+# Node / frontend build output
+node_modules/
+dist/
+coverage/
+
+# Test reports
+playwright-report/
+test-results/
+
+# Logs
+*.log
+logs/
+
+# IDEs
+.idea/
+*.iml
+
+# OS files
+.DS_Store
+Thumbs.db
