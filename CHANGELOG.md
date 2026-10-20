@@ -13,6 +13,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `control-api` Spring Boot service (Java 17, Spring Boot 4.1) with an Actuator health endpoint.
 - PostgreSQL 17 for local development via Docker Compose (`compose.yaml`).
 - Spring Data JPA and Flyway database migrations; initial `managed_services` table (`V1`).
-- Testcontainers-based PostgreSQL for tests.
+- Integration tests for the managed service API, running against PostgreSQL in Testcontainers.
 - Managed service registry API: `GET /api/services`, `GET /api/services/{id}`, and `POST /api/services` with request validation.
 - Consistent JSON error responses (RFC 9457 problem details) for 400, 404, and 409.
