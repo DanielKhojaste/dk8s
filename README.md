@@ -22,17 +22,43 @@ Maven doesn't need to be installed, because `control-api` includes the Maven Wra
 
 ## Running locally
 
-Commands are for Git Bash, run from the repository root.
+Commands are for Git Bash, run from the repository root unless noted.
 
-**1. Start PostgreSQL**
+**1. Create your local `.env`** (first time only)
 
 ```bash
-docker compose up -d
+cp .env.example .env
 ```
 
-This starts PostgreSQL on `localhost:5432` with a `dk8s` database. The credentials are disposable local-development defaults (`dk8s` / `dk8s`). Data persists in a Docker volume until you run `docker compose down -v`.
+`.env` holds your local settings and is ignored by git. `.env.example` is the committed template with safe, disposable values. The defaults work as-is. If you change a password or port in `.env`, change the matching `DB_*` value too (see [Configuration](#configuration)).
 
-**2. Run the control API**
+**2. Start PostgreSQL**
+
+```bash
+docker compose up -d postgres
+```
+
+Docker Compose reads `.env` automatically and uses it to fill in `compose.yaml`. `-d` runs the container in the background.
+
+**3. Check that it's healthy**
+
+```bash
+docker compose ps
+```
+
+Wait until the `STATUS` column says `(healthy)`.
+
+**4. Load `.env` into your terminal**
+
+```bash
+set -a
+source .env
+set +a
+```
+
+Spring Boot doesn't read `.env` files. These three lines export every variable in `.env` into the current Git Bash session, so programs started from it (like Java) can see `DB_URL`, `DB_USERNAME`, and `DB_PASSWORD`. Run them again in each new terminal, and after editing `.env`.
+
+**5. Run the control API**
 
 ```bash
 cd control-api
@@ -41,7 +67,7 @@ cd control-api
 
 Flyway applies any pending migrations on startup. The API listens on `http://localhost:8080`.
 
-**3. Check it's up**
+**6. Check it's up**
 
 ```bash
 curl localhost:8080/actuator/health
@@ -49,13 +75,26 @@ curl localhost:8080/actuator/health
 
 ### Configuration
 
-The defaults match `compose.yaml`, so no configuration is needed locally. To point at a different database, set:
+All local settings live in `.env` (copied from `.env.example`). Two different programs read it:
 
-| Variable | Default |
-|---|---|
-| `DB_URL` | `jdbc:postgresql://localhost:5432/dk8s` |
-| `DB_USERNAME` | `dk8s` |
-| `DB_PASSWORD` | `dk8s` |
+| Variable | Read by | Purpose | Default |
+|---|---|---|---|
+| `POSTGRES_DB` | Docker Compose → postgres container | Database to create | `dk8s` |
+| `POSTGRES_USER` | Docker Compose → postgres container | User to create | `dk8s` |
+| `POSTGRES_PASSWORD` | Docker Compose → postgres container | That user's password | `dk8s` |
+| `POSTGRES_PORT` | Docker Compose | Port on your machine that forwards to PostgreSQL | `5432` |
+| `DB_URL` | `control-api` (Spring Boot) | JDBC URL to connect to | `jdbc:postgresql://localhost:5432/dk8s` |
+| `DB_USERNAME` | `control-api` (Spring Boot) | User to log in as | `dk8s` |
+| `DB_PASSWORD` | `control-api` (Spring Boot) | Password to log in with | `dk8s` |
+
+The `DB_*` values must match the `POSTGRES_*` values, and the port in `DB_URL` must equal `POSTGRES_PORT`. If a variable isn't set, both `compose.yaml` and `application.yaml` fall back to the defaults above.
+
+**Changing the database password after the first start:** PostgreSQL only uses `POSTGRES_*` the first time it creates its data volume. To apply new credentials, delete the volume (this erases local data) and start again:
+
+```bash
+docker compose down -v
+docker compose up -d postgres
+```
 
 ## REST API
 

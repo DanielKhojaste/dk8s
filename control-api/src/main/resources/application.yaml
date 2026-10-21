@@ -2,7 +2,8 @@ spring:
   application:
     name: control-api
   datasource:
-    # Defaults match the disposable credentials in compose.yaml.
+    # Read from environment variables (see .env.example in the repo root).
+    # Defaults after ":" match the defaults in compose.yaml.
     url: ${DB_URL:jdbc:postgresql://localhost:5432/dk8s}
     username: ${DB_USERNAME:dk8s}
     password: ${DB_PASSWORD:dk8s}
