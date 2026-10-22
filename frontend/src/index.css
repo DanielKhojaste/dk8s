@@ -148,11 +148,25 @@ a {
   font-weight: 600;
 }
 
+.sidebar__footer {
+  margin-top: auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0 0.25rem 0 0.75rem;
+}
+
 .version {
-  margin: auto 0 0;
-  padding: 0 0.75rem;
+  margin: 0;
   font-family: var(--font-code);
   font-size: 0.8125rem;
+}
+
+.sidebar__logo {
+  display: block;
+  width: 3.25rem;
+  height: auto;
 }
 
 .content {
@@ -198,6 +212,22 @@ a {
 
   .version {
     display: none;
+  }
+
+  /* Mobile top bar: brand + logo on the first row, navigation on the second. */
+  .sidebar__footer {
+    order: 1;
+    margin: 0 0 0 auto;
+    padding: 0;
+  }
+
+  .nav {
+    order: 2;
+    flex-basis: 100%;
+  }
+
+  .sidebar__logo {
+    width: 2.25rem;
   }
 
   .content {
