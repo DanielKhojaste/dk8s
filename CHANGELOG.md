@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `worker` Spring Boot service: consumes deployment requests from the `dk8s.worker.deployment-requests` queue, publishes `started`, then `completed` or `failed`. Deployments are simulated (default 3 s); a version containing `fail` (e.g. `1.6.0-fail`) fails on purpose to demonstrate the failure path.
 - Operational event timeline (`service_events` table, `V3` migration): `GET /api/events` and `GET /api/services/{id}/events`.
 - `503 Message broker unavailable` when Solace can't be reached; the request is rolled back so nothing is half-saved.
+- `GET /api/messaging/queues`: consumers and waiting messages for each DK8s queue, read from the broker's SEMP v2 monitor API (`brokerReachable: false` if the broker can't be reached).
 - Frontend: live deployment progress (polls while a deployment is pending or in progress), an event timeline on each service page and a "Recent events" feed on the dashboard, each showing the Solace topic, and a clear message when the broker is unavailable.
 
 ### Changed

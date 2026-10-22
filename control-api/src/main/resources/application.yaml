@@ -22,6 +22,11 @@ solace:
     client-password: ${SOLACE_PASSWORD:default}
 
 dk8s:
+  solace:
+    # Broker management API (SEMP), used to read queue statistics. Defaults match compose.yaml.
+    semp-url: ${SOLACE_SEMP_URL:http://localhost:8081}
+    admin-username: ${SOLACE_ADMIN_USERNAME:admin}
+    admin-password: ${SOLACE_ADMIN_PASSWORD:admin}
   messaging:
     # Queue (created by infra/solace/provision.sh) holding the worker's started/completed/failed messages.
     deployment-updates-queue: dk8s.control-api.deployment-updates
