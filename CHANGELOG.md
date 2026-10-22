@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Shell scripts, Dockerfiles and nginx config always keep LF line endings (`.gitattributes`), so `solace-init` no longer fails on Windows checkouts with `set: illegal option -`.
 - Sidebar column stays dark below the sticky sidebar on long pages; deployment versions no longer wrap.
 
 ## [0.2.0] - 2026-10-22

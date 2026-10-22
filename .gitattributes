@@ -1,3 +1,9 @@
 # Always check out .env.example with LF line endings, even on Windows.
 # A CRLF copy would make `source .env` in Git Bash put a hidden \r at the end of every value.
 .env.example text eol=lf
+
+# Files that run inside Linux containers must keep LF line endings, even on Windows:
+# a CRLF shell script fails with errors like "set: illegal option -".
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.conf text eol=lf
