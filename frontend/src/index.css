@@ -505,6 +505,22 @@ a {
   font-weight: 600;
 }
 
+.notice--warning {
+  border-color: var(--degraded);
+  border-left-width: 4px;
+}
+
+.notice--progress {
+  border-color: var(--action);
+  border-left-width: 4px;
+}
+
+.section .notice + .table,
+.section .notice--warning,
+.section .notice--progress {
+  margin-bottom: 0.75rem;
+}
+
 /* ---------- Forms & buttons ---------- */
 
 .button {

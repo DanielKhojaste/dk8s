@@ -3,6 +3,7 @@ import { Link } from 'react-router'
 import { useRecentEvents } from '../api/events'
 import { useServices } from '../api/managedServices'
 import { EventTimeline } from '../components/EventTimeline'
+import { MessagingPanel } from '../components/MessagingPanel'
 import { Empty, Loading, LoadError } from '../components/QueryState'
 import { ServiceTable } from '../components/ServiceTable'
 import { StatusBar } from '../components/StatusBar'
@@ -39,6 +40,10 @@ export function DashboardPage() {
                 .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
                 .slice(0, RECENT_LIMIT)}
             />
+          </section>
+          <section className="section" aria-labelledby="messaging-heading">
+            <h2 id="messaging-heading" className="section__title">Messaging (Solace queues)</h2>
+            <MessagingPanel />
           </section>
           {events && events.length > 0 && (
             <section className="section" aria-labelledby="events-heading">

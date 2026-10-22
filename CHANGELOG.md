@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `503 Message broker unavailable` when Solace can't be reached; the request is rolled back so nothing is half-saved.
 - `GET /api/messaging/queues`: consumers and waiting messages for each DK8s queue, read from the broker's SEMP v2 monitor API (`brokerReachable: false` if the broker can't be reached).
 - Frontend: live deployment progress (polls while a deployment is pending or in progress), an event timeline on each service page and a "Recent events" feed on the dashboard, each showing the Solace topic, and a clear message when the broker is unavailable.
+- Frontend: a pending deployment explains what it's waiting for (elapsed time, and a warning when no worker is connected to the deployment queue), and the dashboard shows each Solace queue's consumers and waiting messages.
 
 ### Changed
 
