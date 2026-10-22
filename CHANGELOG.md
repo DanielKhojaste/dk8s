@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `GET /api/messaging/queues`: consumers and waiting messages for each DK8s queue, read from the broker's SEMP v2 monitor API (`brokerReachable: false` if the broker can't be reached).
 - Frontend: live deployment progress (polls while a deployment is pending or in progress), an event timeline on each service page and a "Recent events" feed on the dashboard, each showing the Solace topic, and a clear message when the broker is unavailable.
 - Frontend: a pending deployment explains what it's waiting for (elapsed time, and a warning when no worker is connected to the deployment queue), and the dashboard shows each Solace queue's consumers and waiting messages.
-- DK8s logo in the sidebar.
+- DK8s logo in the sidebar and as the browser tab icon.
 
 ### Changed
 
