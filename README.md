@@ -4,15 +4,15 @@ An event-driven engineering operations console for registering, monitoring, and 
 
 Engineers use DK8s to see which services are healthy, which version is deployed, what was deployed recently, and what operational events occurred, and to request deployments, restarts, and configuration changes.
 
-> **Status:** early development, working toward `v0.1.0`. Today DK8s has a service registry REST API backed by PostgreSQL and a React console for it. See [CHANGELOG.md](CHANGELOG.md).
+> **Status:** `v0.1.0`. DK8s has a service registry and deployment history (REST API + PostgreSQL) and a React console. Deployments are **simulated**: they're recorded and complete immediately; nothing is actually deployed yet. See [CHANGELOG.md](CHANGELOG.md).
 
 ## What works today
 
-- **`control-api`**: a Java 17 / Spring Boot 4.1 REST API for registering and viewing managed services
+- **`control-api`**: a Java 17 / Spring Boot 4.1 REST API for registering managed services and deploying new versions (simulated), with deployment history
 - **PostgreSQL 17** for persistence, started locally with Docker Compose
 - **Flyway** migrations that create and version the database schema
 - **Integration tests** that run against a real PostgreSQL container (Testcontainers)
-- **`frontend`**: a React + TypeScript console (Vite, React Router, TanStack Query) with a dashboard, service list, service details, and a register-service form
+- **`frontend`**: a React + TypeScript console (Vite, React Router, TanStack Query) with a dashboard, service list, service details (deploy form + deployment history), and a register-service form
 
 ## Prerequisites
 
@@ -115,6 +115,9 @@ Open `http://localhost:5173`. The Vite dev server forwards `/api` requests to `c
 | `GET` | `/api/services` | List managed services, sorted by name | `200` |
 | `GET` | `/api/services/{id}` | Get one managed service | `200`, `404` |
 | `POST` | `/api/services` | Register a managed service | `201`, `400`, `409` |
+| `GET` | `/api/services/{id}/deployments` | Deployment history, newest first | `200`, `404` |
+| `GET` | `/api/services/{id}/deployments/{deploymentId}` | Get one deployment | `200`, `404` |
+| `POST` | `/api/services/{id}/deployments` | Deploy a new version (simulated) | `201`, `400`, `404`, `409` |
 | `GET` | `/actuator/health` | Application health | `200` |
 
 ### Register a service
@@ -144,6 +147,29 @@ Request rules:
 - `description`: optional, at most 500 characters
 
 New services start with status `UNKNOWN`. The possible statuses are `HEALTHY`, `DEGRADED`, `FAILED`, and `UNKNOWN`.
+
+### Deploy a new version
+
+```bash
+curl -i -X POST localhost:8080/api/services/1/deployments \
+  -H "Content-Type: application/json" \
+  -d '{"version": "1.5.0"}'
+```
+
+```json
+{
+  "id": 1,
+  "serviceId": 1,
+  "version": "1.5.0",
+  "previousVersion": "1.4.2",
+  "status": "SUCCEEDED",
+  "failureReason": null,
+  "requestedAt": "2026-10-22T21:06:10.512304Z",
+  "completedAt": "2026-10-22T21:06:10.512871Z"
+}
+```
+
+In this release, deployments are simulated: they complete immediately, update the service's `version`, and set its status to `HEALTHY`. Deployment statuses are `PENDING`, `IN_PROGRESS`, `SUCCEEDED`, and `FAILED`. Requesting a deployment while another one for the same service is still `PENDING` or `IN_PROGRESS` returns `409`.
 
 ### Errors
 

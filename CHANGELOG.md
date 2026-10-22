@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-22
+
 ### Added
 
 - Project versioning (`VERSION` file) and this changelog.
@@ -22,3 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deployments: `POST /api/services/{id}/deployments` deploys a new version (simulated; completes immediately), with history via `GET /api/services/{id}/deployments` and `GET /api/services/{id}/deployments/{deploymentId}`. Successful deployments update the service's version and set it to `HEALTHY`; a second deployment while one is active returns 409.
 - `deployments` table (`V2` migration) linked to `managed_services`.
 - Service detail page: deploy form and deployment history (previous → new version, status, timestamps).
+
+[Unreleased]: https://github.com/DanielKhojaste/dk8s/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/DanielKhojaste/dk8s/releases/tag/v0.1.0
