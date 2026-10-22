@@ -1,5 +1,7 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
+import logoUrl from '../assets/dk8s-logo.svg'
+
 export function AppLayout() {
   const { pathname } = useLocation()
   // "Services" covers the list and every service's detail page, but not the register form,
@@ -27,7 +29,10 @@ export function AppLayout() {
             Register service
           </NavLink>
         </nav>
-        <p className="version">v{__APP_VERSION__}</p>
+        <div className="sidebar__footer">
+          <p className="version">v{__APP_VERSION__}</p>
+          <img src={logoUrl} alt="DK8s logo" title="DK8s, built by Daniel Khojaste" className="sidebar__logo" />
+        </div>
       </header>
       <main className="content">
         <Outlet />

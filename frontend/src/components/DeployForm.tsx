@@ -22,6 +22,8 @@ export function DeployForm({ serviceId, currentVersion }: { serviceId: number; c
             setError(err.problem?.errors?.version ?? 'Enter a version to deploy.')
           } else if (err instanceof ApiError && err.status === 409) {
             setError('A deployment of this service is already in progress. Wait for it to finish, then try again.')
+          } else if (err instanceof ApiError && err.status === 503 && err.problem?.detail) {
+            setError(err.problem.detail)
           } else {
             setError("The deployment wasn't requested because the DK8s API couldn't be reached.")
           }
@@ -34,7 +36,8 @@ export function DeployForm({ serviceId, currentVersion }: { serviceId: number; c
     <form className="deploy-form" onSubmit={handleSubmit} noValidate>
       <label htmlFor="deploy-version">Version to deploy</label>
       <p className="field__hint" id="deploy-version-hint">
-        Currently running <span className="code">{currentVersion}</span>.
+        Currently running <span className="code">{currentVersion}</span>. Deployments are simulated by the DK8s
+        worker; a version containing “fail” (e.g. <span className="code">2.0.0-fail</span>) fails on purpose.
       </p>
       <div className="deploy-form__row">
         <input

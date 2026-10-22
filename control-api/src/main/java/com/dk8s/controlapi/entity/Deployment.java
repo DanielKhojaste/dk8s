@@ -62,6 +62,10 @@ public class Deployment {
 		this.requestedAt = now();
 	}
 
+	public void markInProgress() {
+		this.status = DeploymentStatus.IN_PROGRESS;
+	}
+
 	public void markSucceeded() {
 		this.status = DeploymentStatus.SUCCEEDED;
 		this.completedAt = now();

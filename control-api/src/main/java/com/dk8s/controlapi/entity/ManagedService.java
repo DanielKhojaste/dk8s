@@ -67,6 +67,11 @@ public class ManagedService {
 		this.updatedAt = now();
 	}
 
+	/** Called when a deployment fails: the previous version keeps running, but something is wrong. */
+	public void markDegraded() {
+		this.status = ServiceStatus.DEGRADED;
+	}
+
 	/** Called when a deployment of this service succeeds. */
 	public void applyDeployedVersion(String deployedVersion) {
 		this.version = deployedVersion;

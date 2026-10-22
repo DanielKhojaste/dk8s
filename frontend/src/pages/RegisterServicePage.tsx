@@ -36,6 +36,8 @@ export function RegisterServicePage() {
             setFieldErrors(error.problem.errors)
           } else if (error instanceof ApiError && error.status === 409) {
             setFieldErrors({ name: `A service named “${name.trim()}” is already registered.` })
+          } else if (error instanceof ApiError && error.status === 503 && error.problem?.detail) {
+            setFormError(`The service wasn't registered. ${error.problem.detail}`)
           } else if (error instanceof ApiError && error.status > 0 && error.status < 500) {
             setFormError(`The service wasn't registered: ${error.message}`)
           } else {

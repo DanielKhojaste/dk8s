@@ -1,0 +1,5 @@
+# Used by tests (@ActiveProfiles("test")): don't connect JMS listeners to a real Solace broker.
+spring:
+  jms:
+    listener:
+      auto-startup: false
