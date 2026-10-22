@@ -1,6 +1,8 @@
 import { Link } from 'react-router'
 
+import { useRecentEvents } from '../api/events'
 import { useServices } from '../api/managedServices'
+import { EventTimeline } from '../components/EventTimeline'
 import { Empty, Loading, LoadError } from '../components/QueryState'
 import { ServiceTable } from '../components/ServiceTable'
 import { StatusBar } from '../components/StatusBar'
@@ -9,6 +11,7 @@ const RECENT_LIMIT = 5
 
 export function DashboardPage() {
   const { data: services, isPending, isError, error } = useServices()
+  const { data: events } = useRecentEvents(8)
 
   return (
     <>
@@ -37,6 +40,12 @@ export function DashboardPage() {
                 .slice(0, RECENT_LIMIT)}
             />
           </section>
+          {events && events.length > 0 && (
+            <section className="section" aria-labelledby="events-heading">
+              <h2 id="events-heading" className="section__title">Recent events</h2>
+              <EventTimeline events={events} showService />
+            </section>
+          )}
         </>
       )}
     </>

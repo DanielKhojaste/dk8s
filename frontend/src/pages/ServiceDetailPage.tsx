@@ -5,6 +5,7 @@ import { useService } from '../api/managedServices'
 import { DateTime } from '../components/DateTime'
 import { DeployForm } from '../components/DeployForm'
 import { DeploymentHistory } from '../components/DeploymentHistory'
+import { ServiceEvents } from '../components/ServiceEvents'
 import { Loading, LoadError } from '../components/QueryState'
 import { StatusBadge } from '../components/StatusBadge'
 
@@ -72,6 +73,11 @@ export function ServiceDetailPage() {
       <section className="section" aria-labelledby="history-heading">
         <h2 id="history-heading" className="section__title">Deployment history</h2>
         <DeploymentHistory serviceId={service.id} />
+      </section>
+
+      <section className="section" aria-labelledby="events-heading">
+        <h2 id="events-heading" className="section__title">Events</h2>
+        <ServiceEvents serviceId={service.id} />
       </section>
     </>
   )

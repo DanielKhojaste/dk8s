@@ -7,7 +7,7 @@ import { DeployForm } from './DeployForm'
 
 describe('DeployForm', () => {
   it('sends the version to POST /api/services/{id}/deployments', async () => {
-    const fetchMock = mockFetchResponse(201, { id: 1, serviceId: 3, version: '1.5.0', status: 'SUCCEEDED' })
+    const fetchMock = mockFetchResponse(202, { id: 1, serviceId: 3, version: '1.5.0', status: 'PENDING' })
     renderWithProviders(<DeployForm serviceId={3} currentVersion="1.4.2" />)
 
     await userEvent.type(screen.getByLabelText('Version to deploy'), ' 1.5.0 ')
@@ -28,5 +28,19 @@ describe('DeployForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Deploy' }))
 
     expect(await screen.findByText(/already in progress/)).toBeTruthy()
+  })
+
+  it('shows the broker message when Solace is down (503)', async () => {
+    mockFetchResponse(503, {
+      status: 503,
+      title: 'Message broker unavailable',
+      detail: 'Solace PubSub+ could not be reached, so nothing was saved.',
+    })
+    renderWithProviders(<DeployForm serviceId={3} currentVersion="1.4.2" />)
+
+    await userEvent.type(screen.getByLabelText('Version to deploy'), '1.5.0')
+    await userEvent.click(screen.getByRole('button', { name: 'Deploy' }))
+
+    expect(await screen.findByText(/Solace PubSub\+ could not be reached/)).toBeTruthy()
   })
 })
