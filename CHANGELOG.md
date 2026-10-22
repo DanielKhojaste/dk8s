@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dockerfiles for `control-api`, `worker` (multi-stage Maven build, Alpine Java 17 runtime, non-root user) and `frontend` (Node build, served by nginx, which also proxies `/api` to `control-api`).
 - One-command startup: `docker compose up --build` runs PostgreSQL, Solace, `control-api`, `worker` and the frontend (http://localhost:3000). The apps reach each other by Compose service name and are configured from the same `.env` values.
 
+- GitHub Actions CI (`.github/workflows/ci.yml`): on every push to `main`/`dev` and every pull request, builds and tests `control-api` (with Testcontainers) and `worker`, lints, type-checks, tests and builds the frontend, then builds all three Docker images.
+
 ### Fixed
 
 - Sidebar column stays dark below the sticky sidebar on long pages; deployment versions no longer wrap.
