@@ -1,0 +1,27 @@
+# Local development infrastructure for DK8s.
+# Start with: docker compose up -d postgres
+#
+# ${VAR:-default} values are filled in by Docker Compose from your shell
+# or from the .env file next to this one (copy .env.example to .env).
+# The defaults after :- are used when a variable isn't set.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: dk8s-postgres
+    environment:
+      # Read by the postgres image on first start to create the database and user.
+      POSTGRES_DB: ${POSTGRES_DB:-dk8s}
+      POSTGRES_USER: ${POSTGRES_USER:-dk8s}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dk8s}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
