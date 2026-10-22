@@ -11,7 +11,7 @@ Engineers use DK8s to see which services are healthy, which version is deployed,
 - **`control-api`**: Java 17 / Spring Boot 4.1 REST API for registering services, requesting deployments, and reading deployment history and the event timeline. PostgreSQL 17 with Flyway migrations.
 - **`worker`**: Spring Boot service that takes deployment requests from a Solace queue, simulates the deployment, and publishes `started`, then `completed` or `failed`.
 - **Solace PubSub+ Standard** broker: topics for every event, durable queues so no request is lost if a service is down.
-- **`frontend`**: React + TypeScript console (Vite, React Router, TanStack Query) with a dashboard, service list, live deployment progress, deployment history, and an event timeline.
+- **`frontend`**: React + TypeScript console (Vite, React Router, TanStack Query) with a dashboard, service list, live deployment progress, deployment history, an event timeline, and live Solace queue health (consumers and waiting messages).
 - **Tests**: integration tests against a real PostgreSQL container (Testcontainers), unit tests for the worker, and frontend component tests.
 
 ## How a deployment flows
@@ -55,7 +55,7 @@ Queues subscribe with wildcards (`dk8s/deployment/requested/>`), so new services
 
 ### What happens when things fail
 
-- **Worker is down:** requests wait in `dk8s.worker.deployment-requests` (persistent, guaranteed delivery). The deployment stays `PENDING` until the worker starts, then completes normally.
+- **Worker is down:** requests wait in `dk8s.worker.deployment-requests` (persistent, guaranteed delivery). The deployment stays `PENDING` until the worker starts, then completes normally. Meanwhile the service page says *No worker is connected to the deployment queue (1 request waiting)*, using live queue statistics from the broker.
 - **Broker is down:** `control-api` returns `503 Message broker unavailable` and rolls back, so no half-saved deployment is left behind.
 - **Deployment fails:** deploy a version containing `fail` (for example `1.6.0-fail`). The worker publishes `failed`, the deployment is marked `FAILED` with a reason, the service keeps its previous version and becomes `DEGRADED`.
 - **Duplicate message:** updates for a deployment that has already finished are ignored, so a redelivered message can't change anything twice.
@@ -138,7 +138,7 @@ Open `http://localhost:5173`. The Vite dev server forwards `/api` requests to `c
 1. Register `payments-api` at version `1.4.2`.
 2. On its page, deploy `1.5.0` and watch it go **Pending → In progress → Succeeded**, with each step in the Events list.
 3. Deploy `1.6.0-fail` to see a failed deployment.
-4. Stop the worker (`Ctrl+C`), deploy `1.7.0` (it stays **Pending**), then start the worker again and watch it complete.
+4. Stop the worker (`Ctrl+C`) and deploy `1.7.0`: it stays **Pending**, and the page explains that no worker is connected (the dashboard's **Messaging** panel shows the waiting request). Start the worker again and watch it complete.
 
 ### Configuration
 
@@ -160,6 +160,8 @@ All local settings live in `.env` (copied from `.env.example`):
 | `SOLACE_VPN` | control-api, worker | Message VPN | `default` |
 | `SOLACE_USERNAME` | control-api, worker | Client username | `default` |
 | `SOLACE_PASSWORD` | control-api, worker | Client password | `default` |
+| `SOLACE_SEMP_URL` | control-api | Broker management API, for queue statistics | `http://localhost:8081` |
+| `SOLACE_ADMIN_USERNAME` | control-api | Management API user (password: `SOLACE_ADMIN_PASSWORD`) | `admin` |
 | `DEPLOYMENT_SIMULATION_DURATION` | worker | How long a simulated deployment takes | `3s` |
 
 The `DB_*` values must match the `POSTGRES_*` values, and the port in `DB_URL` must equal `POSTGRES_PORT`. Likewise, the port in `SOLACE_HOST` must equal `SOLACE_SMF_PORT`. If a variable isn't set, `compose.yaml` and each `application.yaml` fall back to the defaults above.
@@ -183,6 +185,7 @@ docker compose up -d postgres solace solace-init
 | `POST` | `/api/services/{id}/deployments` | Request a deployment (processed by the worker) | `202`, `400`, `404`, `409`, `503` |
 | `GET` | `/api/services/{id}/events` | Event timeline for one service, newest first | `200`, `404` |
 | `GET` | `/api/events?limit=20` | Newest events across all services (max 100) | `200` |
+| `GET` | `/api/messaging/queues` | Consumers and waiting messages for each DK8s queue, from the broker's SEMP v2 monitor API | `200` |
 | `GET` | `/actuator/health` | Application health (includes database and broker) | `200`, `503` |
 
 ### Register a service
