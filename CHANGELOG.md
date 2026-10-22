@@ -21,3 +21,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Vitest + Testing Library tests for the service list and registration flow.
 - Deployments: `POST /api/services/{id}/deployments` deploys a new version (simulated; completes immediately), with history via `GET /api/services/{id}/deployments` and `GET /api/services/{id}/deployments/{deploymentId}`. Successful deployments update the service's version and set it to `HEALTHY`; a second deployment while one is active returns 409.
 - `deployments` table (`V2` migration) linked to `managed_services`.
+- Service detail page: deploy form and deployment history (previous → new version, status, timestamps).

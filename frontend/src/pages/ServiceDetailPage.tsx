@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router'
 import { ApiError } from '../api/client'
 import { useService } from '../api/managedServices'
 import { DateTime } from '../components/DateTime'
+import { DeployForm } from '../components/DeployForm'
+import { DeploymentHistory } from '../components/DeploymentHistory'
 import { Loading, LoadError } from '../components/QueryState'
 import { StatusBadge } from '../components/StatusBadge'
 
@@ -61,6 +63,16 @@ export function ServiceDetailPage() {
           </dd>
         </div>
       </dl>
+
+      <section className="section" aria-labelledby="deploy-heading">
+        <h2 id="deploy-heading" className="section__title">Deploy</h2>
+        <DeployForm serviceId={service.id} currentVersion={service.version} />
+      </section>
+
+      <section className="section" aria-labelledby="history-heading">
+        <h2 id="history-heading" className="section__title">Deployment history</h2>
+        <DeploymentHistory serviceId={service.id} />
+      </section>
     </>
   )
 }
