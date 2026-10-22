@@ -1,3 +1,14 @@
 spring:
   application:
     name: control-api
+  datasource:
+    # Read from environment variables (see .env.example in the repo root).
+    # Defaults after ":" match the defaults in compose.yaml.
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/dk8s}
+    username: ${DB_USERNAME:dk8s}
+    password: ${DB_PASSWORD:dk8s}
+  jpa:
+    # Flyway owns the schema; Hibernate only checks that entities match it.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
