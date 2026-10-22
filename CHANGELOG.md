@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Solace PubSub+ Standard broker in Docker Compose, with a one-off `solace-init` job that creates the DK8s queues and topic subscriptions through the SEMP v2 management API.
+
 ## [0.1.0] - 2026-10-22
 
 ### Added

@@ -1,5 +1,5 @@
 # Local development infrastructure for DK8s.
-# Start with: docker compose up -d postgres
+# Start with: docker compose up -d postgres solace solace-init
 #
 # ${VAR:-default} values are filled in by Docker Compose from your shell
 # or from the .env file next to this one (copy .env.example to .env).
@@ -22,6 +22,46 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  solace:
+    image: solace/solace-pubsub-standard:10.25.0
+    container_name: dk8s-solace
+    # The broker needs shared memory and higher file limits to start.
+    shm_size: 1g
+    ulimits:
+      core: -1
+      nofile:
+        soft: 2448
+        hard: 1048576
+    environment:
+      username_admin_globalaccesslevel: admin
+      username_admin_password: ${SOLACE_ADMIN_PASSWORD:-admin}
+      system_scaling_maxconnectioncount: 100
+    ports:
+      # SMF: the messaging protocol the Java apps connect with.
+      # Host port 55554 (Solace's own example uses it, because 55555 is taken on some Macs).
+      - "${SOLACE_SMF_PORT:-55554}:55555"
+      # Broker Manager web UI and SEMP management API (8080 inside; moved to 8081 so it doesn't clash with control-api).
+      - "${SOLACE_MANAGER_PORT:-8081}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5550/health-check/guaranteed-active"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 20s
+
+  # One-off job: creates the queues and topic subscriptions, then exits.
+  solace-init:
+    image: curlimages/curl:8.16.0
+    depends_on:
+      solace:
+        condition: service_healthy
+    environment:
+      SOLACE_ADMIN_PASSWORD: ${SOLACE_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./infra/solace/provision.sh:/provision.sh:ro
+    entrypoint: ["sh", "/provision.sh"]
+    restart: "no"
 
 volumes:
   postgres-data:
