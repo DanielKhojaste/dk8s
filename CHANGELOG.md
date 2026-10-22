@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+### Fixed
+
+- Sidebar column stays dark below the sticky sidebar on long pages; deployment versions no longer wrap.
+
 ## [0.2.0] - 2026-10-22
 
 ### Added
