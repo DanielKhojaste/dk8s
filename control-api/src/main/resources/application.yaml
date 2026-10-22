@@ -12,3 +12,16 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+
+# Solace PubSub+ connection (see .env.example). Defaults match compose.yaml.
+solace:
+  jms:
+    host: ${SOLACE_HOST:tcp://localhost:55554}
+    msg-vpn: ${SOLACE_VPN:default}
+    client-username: ${SOLACE_USERNAME:default}
+    client-password: ${SOLACE_PASSWORD:default}
+
+dk8s:
+  messaging:
+    # Queue (created by infra/solace/provision.sh) holding the worker's started/completed/failed messages.
+    deployment-updates-queue: dk8s.control-api.deployment-updates

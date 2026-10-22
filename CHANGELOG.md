@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Solace PubSub+ Standard broker in Docker Compose, with a one-off `solace-init` job that creates the DK8s queues and topic subscriptions through the SEMP v2 management API.
+- `control-api` publishes `deployment.requested` and `service.registered` messages to Solace topics (`dk8s/deployment/requested/{service}`, `dk8s/service/registered/{service}`) and consumes the worker's started/completed/failed messages from the `dk8s.control-api.deployment-updates` queue.
+- Operational event timeline (`service_events` table, `V3` migration): `GET /api/events` and `GET /api/services/{id}/events`.
+- `503 Message broker unavailable` when Solace can't be reached; the request is rolled back so nothing is half-saved.
+
+### Changed
+
+- `POST /api/services/{id}/deployments` now returns `202 Accepted` with a `PENDING` deployment; the worker completes it asynchronously. A failed deployment keeps the previous version and marks the service `DEGRADED`.
 
 ## [0.1.0] - 2026-10-22
 
