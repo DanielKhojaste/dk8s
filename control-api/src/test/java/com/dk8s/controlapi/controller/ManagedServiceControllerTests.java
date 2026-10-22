@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.dk8s.controlapi.TestcontainersConfiguration;
 import com.dk8s.controlapi.entity.ManagedService;
 import com.dk8s.controlapi.entity.ServiceStatus;
+import com.dk8s.controlapi.repository.DeploymentRepository;
 import com.dk8s.controlapi.repository.ManagedServiceRepository;
 
 /**
@@ -37,8 +38,12 @@ class ManagedServiceControllerTests {
 	@Autowired
 	private ManagedServiceRepository repository;
 
+	@Autowired
+	private DeploymentRepository deploymentRepository;
+
 	@BeforeEach
 	void clearDatabase() {
+		deploymentRepository.deleteAll(); // deployments reference services, so delete them first
 		repository.deleteAll();
 	}
 
