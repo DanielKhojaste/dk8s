@@ -67,6 +67,12 @@ public class ManagedService {
 		this.updatedAt = now();
 	}
 
+	/** Called when a deployment of this service succeeds. */
+	public void applyDeployedVersion(String deployedVersion) {
+		this.version = deployedVersion;
+		this.status = ServiceStatus.HEALTHY;
+	}
+
 	/** PostgreSQL stores microseconds, so drop the extra precision before saving. */
 	private static Instant now() {
 		return Instant.now().truncatedTo(ChronoUnit.MICROS);

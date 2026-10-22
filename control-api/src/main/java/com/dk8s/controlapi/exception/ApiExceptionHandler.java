@@ -27,6 +27,16 @@ public class ApiExceptionHandler {
 		return problem(HttpStatus.CONFLICT, "Duplicate managed service name", ex.getMessage());
 	}
 
+	@ExceptionHandler(DeploymentNotFoundException.class)
+	ProblemDetail handleDeploymentNotFound(DeploymentNotFoundException ex) {
+		return problem(HttpStatus.NOT_FOUND, "Deployment not found", ex.getMessage());
+	}
+
+	@ExceptionHandler(DeploymentInProgressException.class)
+	ProblemDetail handleDeploymentInProgress(DeploymentInProgressException ex) {
+		return problem(HttpStatus.CONFLICT, "Deployment already in progress", ex.getMessage());
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
 		Map<String, String> errors = new LinkedHashMap<>();
