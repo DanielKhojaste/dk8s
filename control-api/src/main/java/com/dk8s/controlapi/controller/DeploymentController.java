@@ -46,7 +46,8 @@ public class DeploymentController {
 				.path("/{id}")
 				.buildAndExpand(created.id())
 				.toUri();
-		return ResponseEntity.created(location).body(created);
+		// 202 Accepted: the request is saved and queued, but the worker hasn't finished it yet.
+		return ResponseEntity.accepted().location(location).body(created);
 	}
 
 }

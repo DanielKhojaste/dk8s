@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-22
+
+### Added
+
+- Solace PubSub+ Standard broker in Docker Compose, with a one-off `solace-init` job that creates the DK8s queues and topic subscriptions through the SEMP v2 management API.
+- `control-api` publishes `deployment.requested` and `service.registered` messages to Solace topics (`dk8s/deployment/requested/{service}`, `dk8s/service/registered/{service}`) and consumes the worker's started/completed/failed messages from the `dk8s.control-api.deployment-updates` queue.
+- `worker` Spring Boot service: consumes deployment requests from the `dk8s.worker.deployment-requests` queue, publishes `started`, then `completed` or `failed`. Deployments are simulated (default 3 s); a version containing `fail` (e.g. `1.6.0-fail`) fails on purpose to demonstrate the failure path.
+- Operational event timeline (`service_events` table, `V3` migration): `GET /api/events` and `GET /api/services/{id}/events`.
+- `503 Message broker unavailable` when Solace can't be reached; the request is rolled back so nothing is half-saved.
+- `GET /api/messaging/queues`: consumers and waiting messages for each DK8s queue, read from the broker's SEMP v2 monitor API (`brokerReachable: false` if the broker can't be reached).
+- Frontend: live deployment progress (polls while a deployment is pending or in progress), an event timeline on each service page and a "Recent events" feed on the dashboard, each showing the Solace topic, and a clear message when the broker is unavailable.
+- Frontend: a pending deployment explains what it's waiting for (elapsed time, and a warning when no worker is connected to the deployment queue), and the dashboard shows each Solace queue's consumers and waiting messages.
+- DK8s logo in the sidebar and as the browser tab icon.
+
+### Changed
+
+- `POST /api/services/{id}/deployments` now returns `202 Accepted` with a `PENDING` deployment; the worker completes it asynchronously. A failed deployment keeps the previous version and marks the service `DEGRADED`.
+
 ## [0.1.0] - 2026-10-22
 
 ### Added
@@ -25,5 +43,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `deployments` table (`V2` migration) linked to `managed_services`.
 - Service detail page: deploy form and deployment history (previous → new version, status, timestamps).
 
-[Unreleased]: https://github.com/DanielKhojaste/dk8s/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/DanielKhojaste/dk8s/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/DanielKhojaste/dk8s/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/DanielKhojaste/dk8s/releases/tag/v0.1.0

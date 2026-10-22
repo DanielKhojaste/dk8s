@@ -27,7 +27,8 @@ export function createService(request: CreateManagedServiceRequest): Promise<Man
 }
 
 export function useServices() {
-  return useQuery({ queryKey: serviceKeys.all, queryFn: fetchServices })
+  // Statuses change when the worker finishes a deployment, so keep the list fresh.
+  return useQuery({ queryKey: serviceKeys.all, queryFn: fetchServices, refetchInterval: 5000 })
 }
 
 export function useService(id: number | null) {

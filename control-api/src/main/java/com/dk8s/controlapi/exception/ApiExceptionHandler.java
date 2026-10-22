@@ -37,6 +37,12 @@ public class ApiExceptionHandler {
 		return problem(HttpStatus.CONFLICT, "Deployment already in progress", ex.getMessage());
 	}
 
+	@ExceptionHandler(MessageBrokerUnavailableException.class)
+	ProblemDetail handleBrokerUnavailable(MessageBrokerUnavailableException ex) {
+		return problem(HttpStatus.SERVICE_UNAVAILABLE, "Message broker unavailable",
+				"Solace PubSub+ could not be reached, so nothing was saved. Check that the broker is running and try again.");
+	}
+
 	@ExceptionHandler(MethodArgumentNotValidException.class)
 	ProblemDetail handleValidation(MethodArgumentNotValidException ex) {
 		Map<String, String> errors = new LinkedHashMap<>();

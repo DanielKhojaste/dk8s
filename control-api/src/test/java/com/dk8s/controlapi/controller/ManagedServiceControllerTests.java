@@ -2,6 +2,11 @@ package com.dk8s.controlapi.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.matchesRegex;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -15,12 +20,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.dk8s.controlapi.TestcontainersConfiguration;
 import com.dk8s.controlapi.entity.ManagedService;
 import com.dk8s.controlapi.entity.ServiceStatus;
-import com.dk8s.controlapi.repository.DeploymentRepository;
+import com.dk8s.controlapi.exception.MessageBrokerUnavailableException;
+import com.dk8s.controlapi.messaging.MessagePublisher;
+import com.dk8s.controlapi.messaging.ServiceRegisteredMessage;
 import com.dk8s.controlapi.repository.ManagedServiceRepository;
 
 /**
@@ -30,6 +40,7 @@ import com.dk8s.controlapi.repository.ManagedServiceRepository;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
+@ActiveProfiles("test")
 class ManagedServiceControllerTests {
 
 	@Autowired
@@ -39,12 +50,14 @@ class ManagedServiceControllerTests {
 	private ManagedServiceRepository repository;
 
 	@Autowired
-	private DeploymentRepository deploymentRepository;
+	private JdbcTemplate jdbc;
+
+	@MockitoBean // stands in for Solace: records publish() calls instead of sending
+	private MessagePublisher publisher;
 
 	@BeforeEach
 	void clearDatabase() {
-		deploymentRepository.deleteAll(); // deployments reference services, so delete them first
-		repository.deleteAll();
+		jdbc.execute("TRUNCATE service_events, deployments, managed_services RESTART IDENTITY CASCADE");
 	}
 
 	@Test
@@ -64,6 +77,22 @@ class ManagedServiceControllerTests {
 				.andExpect(jsonPath("$.updatedAt").isNotEmpty());
 
 		assertThat(repository.count()).isEqualTo(1);
+		verify(publisher).publish(eq("dk8s/service/registered/payments-api"), any(ServiceRegisteredMessage.class));
+	}
+
+	@Test
+	void createReturns503AndSavesNothingWhenBrokerIsDown() throws Exception {
+		doThrow(new MessageBrokerUnavailableException(new RuntimeException("connection refused")))
+				.when(publisher).publish(anyString(), any());
+
+		mockMvc.perform(post("/api/services").contentType(MediaType.APPLICATION_JSON)
+						.content("""
+								{"name": "payments-api", "version": "1.4.2"}
+								"""))
+				.andExpect(status().isServiceUnavailable())
+				.andExpect(jsonPath("$.title").value("Message broker unavailable"));
+
+		assertThat(repository.count()).isZero();
 	}
 
 	@Test
