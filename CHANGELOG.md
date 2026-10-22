@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Solace PubSub+ Standard broker in Docker Compose, with a one-off `solace-init` job that creates the DK8s queues and topic subscriptions through the SEMP v2 management API.
 - `control-api` publishes `deployment.requested` and `service.registered` messages to Solace topics (`dk8s/deployment/requested/{service}`, `dk8s/service/registered/{service}`) and consumes the worker's started/completed/failed messages from the `dk8s.control-api.deployment-updates` queue.
+- `worker` Spring Boot service: consumes deployment requests from the `dk8s.worker.deployment-requests` queue, publishes `started`, then `completed` or `failed`. Deployments are simulated (default 3 s); a version containing `fail` (e.g. `1.6.0-fail`) fails on purpose to demonstrate the failure path.
 - Operational event timeline (`service_events` table, `V3` migration): `GET /api/events` and `GET /api/services/{id}/events`.
 - `503 Message broker unavailable` when Solace can't be reached; the request is rolled back so nothing is half-saved.
 

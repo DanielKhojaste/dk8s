@@ -1,3 +1,19 @@
 spring:
   application:
     name: worker
+
+# Solace PubSub+ connection (see .env.example). Defaults match compose.yaml.
+solace:
+  jms:
+    host: ${SOLACE_HOST:tcp://localhost:55554}
+    msg-vpn: ${SOLACE_VPN:default}
+    client-username: ${SOLACE_USERNAME:default}
+    client-password: ${SOLACE_PASSWORD:default}
+
+dk8s:
+  messaging:
+    # Queue (created by infra/solace/provision.sh) holding deployment requests for every service.
+    deployment-requests-queue: dk8s.worker.deployment-requests
+  simulation:
+    # How long a simulated deployment takes.
+    duration: ${DEPLOYMENT_SIMULATION_DURATION:3s}
