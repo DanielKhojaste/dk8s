@@ -4,7 +4,7 @@ An event-driven engineering operations console for registering, monitoring, and 
 
 Engineers use DK8s to see which services are healthy, which version is deployed, what was deployed recently, and what operational events occurred, and to request deployments, restarts, and configuration changes.
 
-> **Status:** working toward `v0.2.0`. Deployments now run asynchronously through **Solace PubSub+**: `control-api` publishes a request, a separate `worker` service processes it and publishes the result. The deployment itself is still **simulated**: the worker waits a few seconds and reports success; nothing is actually installed. See [CHANGELOG.md](CHANGELOG.md).
+> **Status:** `v0.2.0`. Deployments run asynchronously through **Solace PubSub+**: `control-api` publishes a request, a separate `worker` service processes it and publishes the result. The deployment itself is still **simulated**: the worker waits a few seconds and reports success; nothing is actually installed. See [CHANGELOG.md](CHANGELOG.md).
 
 ## What works today
 

@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.dk8s</groupId>
 	<artifactId>worker</artifactId>
-	<version>0.1.0</version>
+	<version>0.2.0</version>
 	<name>worker</name>
 	<description>DK8s worker: processes deployment requests from Solace PubSub+</description>
 	<properties>
