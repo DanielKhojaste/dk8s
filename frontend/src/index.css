@@ -103,6 +103,8 @@ a {
   display: grid;
   grid-template-columns: 13rem 1fr;
   min-height: 100vh;
+  /* Paint the whole sidebar column, so it stays dark below the sticky sidebar on long pages. */
+  background: linear-gradient(to right, var(--sidebar) 13rem, var(--paper) 13rem);
 }
 
 .sidebar {
@@ -183,6 +185,7 @@ a {
   .shell {
     /* minmax(0, 1fr) lets the column shrink below its content's natural width. */
     grid-template-columns: minmax(0, 1fr);
+    background: var(--paper);
   }
 
   .sidebar {
@@ -436,6 +439,11 @@ a {
 .table__description {
   color: var(--muted);
   max-width: 28rem;
+}
+
+/* Versions like "1.8.3 → 1.9.0-fail" read better on one line. */
+.table td.code {
+  white-space: nowrap;
 }
 
 .code-link {

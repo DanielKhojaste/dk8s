@@ -1,0 +1,9 @@
+# Build context for frontend/Dockerfile (the repository root). Keep it small and secret-free.
+.git
+.env
+.env.*
+!.env.example
+notes/
+**/node_modules
+**/dist
+**/target
