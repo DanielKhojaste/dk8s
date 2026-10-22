@@ -112,6 +112,10 @@ a {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  /* Stay in view while long pages scroll, so the footer (version + logo) is always visible. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 
 .brand {
@@ -151,7 +155,7 @@ a {
 .sidebar__footer {
   margin-top: auto;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0 0.25rem 0 0.75rem;
@@ -182,6 +186,8 @@ a {
   }
 
   .sidebar {
+    position: static;
+    height: auto;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
