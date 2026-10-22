@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-22
+
 ### Added
 
 - Dockerfiles for `control-api`, `worker` (multi-stage Maven build, Alpine Java 17 runtime, non-root user) and `frontend` (Node build, served by nginx, which also proxies `/api` to `control-api`).
@@ -55,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `deployments` table (`V2` migration) linked to `managed_services`.
 - Service detail page: deploy form and deployment history (previous → new version, status, timestamps).
 
-[Unreleased]: https://github.com/DanielKhojaste/dk8s/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/DanielKhojaste/dk8s/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/DanielKhojaste/dk8s/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/DanielKhojaste/dk8s/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/DanielKhojaste/dk8s/releases/tag/v0.1.0

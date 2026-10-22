@@ -8,7 +8,7 @@ Engineers use DK8s to see which services are healthy, which version each one run
 
 ![DK8s dashboard: service health, Solace queue status, and the event timeline](docs/screenshots/dashboard.png)
 
-> **Status:** latest release `v0.2.0` (see [CHANGELOG.md](CHANGELOG.md)). Deployments are **simulated**: the worker waits a few seconds and reports the result, but nothing is actually installed. Everything around that (the API, the messaging, the database, the UI) is real.
+> **Status:** latest release `v0.3.0` (see [CHANGELOG.md](CHANGELOG.md)). Deployments are **simulated**: the worker waits a few seconds and reports the result, but nothing is actually installed. Everything around that (the API, the messaging, the database, the UI) is real.
 
 ## Contents
 
