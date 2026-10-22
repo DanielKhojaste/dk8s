@@ -4,7 +4,7 @@ An event-driven engineering operations console for registering, monitoring, and 
 
 Engineers use DK8s to see which services are healthy, which version is deployed, what was deployed recently, and what operational events occurred, and to request deployments, restarts, and configuration changes.
 
-> **Status:** early development, working toward `v0.1.0`. Today DK8s has a service registry REST API backed by PostgreSQL. See [CHANGELOG.md](CHANGELOG.md).
+> **Status:** early development, working toward `v0.1.0`. Today DK8s has a service registry REST API backed by PostgreSQL and a React console for it. See [CHANGELOG.md](CHANGELOG.md).
 
 ## What works today
 
@@ -12,10 +12,12 @@ Engineers use DK8s to see which services are healthy, which version is deployed,
 - **PostgreSQL 17** for persistence, started locally with Docker Compose
 - **Flyway** migrations that create and version the database schema
 - **Integration tests** that run against a real PostgreSQL container (Testcontainers)
+- **`frontend`**: a React + TypeScript console (Vite, React Router, TanStack Query) with a dashboard, service list, service details, and a register-service form
 
 ## Prerequisites
 
 - Java 17 or newer
+- Node.js 22.22 or newer (for the frontend)
 - Docker Desktop (running)
 
 Maven doesn't need to be installed, because `control-api` includes the Maven Wrapper (`./mvnw`).
@@ -96,6 +98,16 @@ docker compose down -v
 docker compose up -d postgres
 ```
 
+**7. Run the frontend** (in a second terminal)
+
+```bash
+cd frontend
+npm install        # first time only
+npm run dev
+```
+
+Open `http://localhost:5173`. The Vite dev server forwards `/api` requests to `control-api` on port 8080, so the backend must be running. See [frontend/README.md](frontend/README.md) for details.
+
 ## REST API
 
 | Method | Path | Description | Responses |
@@ -149,17 +161,25 @@ Errors use the standard [problem details](https://www.rfc-editor.org/rfc/rfc9457
 
 ## Running tests
 
-Docker must be running, because the tests start their own throwaway PostgreSQL container.
+Docker must be running for the backend tests, because they start their own throwaway PostgreSQL container.
 
 ```bash
 cd control-api
 ./mvnw test
 ```
 
+Frontend tests don't need the backend or Docker:
+
+```bash
+cd frontend
+npm test
+```
+
 ## Project structure
 
 ```text
 compose.yaml                      Local PostgreSQL
+frontend/                         React + TypeScript console (see frontend/README.md)
 control-api/
   src/main/java/com/dk8s/controlapi/
     controller/                   REST endpoints
