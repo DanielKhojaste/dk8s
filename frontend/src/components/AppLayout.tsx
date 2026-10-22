@@ -1,6 +1,6 @@
 import { Link, NavLink, Outlet, useLocation } from 'react-router'
 
-import logoUrl from '../assets/dk-logo.svg'
+import logoUrl from '../assets/dk8s-logo.svg'
 
 export function AppLayout() {
   const { pathname } = useLocation()
@@ -31,7 +31,7 @@ export function AppLayout() {
         </nav>
         <div className="sidebar__footer">
           <p className="version">v{__APP_VERSION__}</p>
-          <img src={logoUrl} alt="DK, Daniel Khojaste" title="Built by Daniel Khojaste" className="sidebar__logo" />
+          <img src={logoUrl} alt="DK8s logo" title="DK8s, built by Daniel Khojaste" className="sidebar__logo" />
         </div>
       </header>
       <main className="content">
