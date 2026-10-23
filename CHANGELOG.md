@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-22
+
+### Added
+
+- Dockerfiles for `control-api`, `worker` (multi-stage Maven build, Alpine Java 17 runtime, non-root user) and `frontend` (Node build, served by nginx, which also proxies `/api` to `control-api`).
+- One-command startup: `docker compose up --build` runs PostgreSQL, Solace, `control-api`, `worker` and the frontend (http://localhost:3000). The apps reach each other by Compose service name and are configured from the same `.env` values.
+- GitHub Actions CI (`.github/workflows/ci.yml`): on every push to `main`/`dev` and every pull request, builds and tests `control-api` (with Testcontainers) and `worker`, lints, type-checks, tests and builds the frontend, then builds all three Docker images.
+- README rewritten around the one-command quick start, with screenshots, an architecture diagram, failure handling, the tech stack, and CI details.
+
+### Fixed
+
+- Shell scripts, Dockerfiles and nginx config always keep LF line endings (`.gitattributes`), so `solace-init` no longer fails on Windows checkouts with `set: illegal option -`.
+- Sidebar column stays dark below the sticky sidebar on long pages; deployment versions no longer wrap.
+
 ## [0.2.0] - 2026-10-22
 
 ### Added
@@ -43,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `deployments` table (`V2` migration) linked to `managed_services`.
 - Service detail page: deploy form and deployment history (previous → new version, status, timestamps).
 
-[Unreleased]: https://github.com/DanielKhojaste/dk8s/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/DanielKhojaste/dk8s/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/DanielKhojaste/dk8s/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/DanielKhojaste/dk8s/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/DanielKhojaste/dk8s/releases/tag/v0.1.0

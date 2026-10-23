@@ -23,6 +23,8 @@ npm run build        # type-check and build to dist/
 
 The browser only ever calls relative URLs such as `/api/services`. In development, the Vite dev server forwards every `/api` request to `http://localhost:8080` (see `server.proxy` in `vite.config.ts`). Because the browser sees a single origin, the backend needs no CORS configuration.
 
+In Docker (`docker compose up --build` from the repository root), the same job is done by nginx: the `frontend` image serves the production build and forwards `/api` to the `control-api` container (see [`nginx.conf`](nginx.conf)). The console is then at `http://localhost:3000`.
+
 ## Pages
 
 | Route | Page |

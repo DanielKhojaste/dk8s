@@ -1,18 +1,89 @@
 # DK8s
 
-An event-driven engineering operations console for registering, monitoring, and managing the lifecycle of containerized services.
+[![CI](https://github.com/DanielKhojaste/dk8s/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/DanielKhojaste/dk8s/actions/workflows/ci.yml)
 
-Engineers use DK8s to see which services are healthy, which version is deployed, what was deployed recently, and what operational events occurred, and to request deployments, restarts, and configuration changes.
+An event-driven engineering operations console for registering, monitoring, and managing the lifecycle of services.
 
-> **Status:** `v0.2.0`. Deployments run asynchronously through **Solace PubSub+**: `control-api` publishes a request, a separate `worker` service processes it and publishes the result. The deployment itself is still **simulated**: the worker waits a few seconds and reports success; nothing is actually installed. See [CHANGELOG.md](CHANGELOG.md).
+Engineers use DK8s to see which services are healthy, which version each one runs, and what happened recently, and to request deployments that are processed asynchronously through **Solace PubSub+**.
 
-## What works today
+![DK8s dashboard: service health, Solace queue status, and the event timeline](docs/screenshots/dashboard.png)
 
-- **`control-api`**: Java 17 / Spring Boot 4.1 REST API for registering services, requesting deployments, and reading deployment history and the event timeline. PostgreSQL 17 with Flyway migrations.
-- **`worker`**: Spring Boot service that takes deployment requests from a Solace queue, simulates the deployment, and publishes `started`, then `completed` or `failed`.
-- **Solace PubSub+ Standard** broker: topics for every event, durable queues so no request is lost if a service is down.
-- **`frontend`**: React + TypeScript console (Vite, React Router, TanStack Query) with a dashboard, service list, live deployment progress, deployment history, an event timeline, and live Solace queue health (consumers and waiting messages).
-- **Tests**: integration tests against a real PostgreSQL container (Testcontainers), unit tests for the worker, and frontend component tests.
+> **Status:** latest release `v0.3.0` (see [CHANGELOG.md](CHANGELOG.md)). Deployments are **simulated**: the worker waits a few seconds and reports the result, but nothing is actually installed. Everything around that (the API, the messaging, the database, the UI) is real.
+
+## Contents
+
+- [What it does](#what-it-does)
+- [Why I built this](#why-i-built-this)
+- [Quick start](#quick-start)
+- [Architecture](#architecture)
+- [How a deployment flows](#how-a-deployment-flows)
+- [What happens when things fail](#what-happens-when-things-fail)
+- [Tech stack](#tech-stack)
+- [Tests and CI](#tests-and-ci)
+- [Local development](#local-development)
+- [REST API](#rest-api)
+- [Project structure](#project-structure)
+- [Roadmap](#roadmap)
+
+## What it does
+
+- **Service registry:** register services with a name, version, and description; see their health at a glance.
+- **Asynchronous deployments:** request a new version, then watch it go **Pending → In progress → Succeeded / Failed** live, without refreshing.
+- **Event timeline:** every message that travels through Solace is recorded with its topic, per service and across the system.
+- **Messaging health:** the dashboard reads live queue statistics from the broker (connected consumers, waiting messages) and explains a stuck deployment, for example *"No worker is connected to the deployment queue (1 request waiting)"*.
+- **Failure handling:** failed deployments keep the previous version and mark the service `DEGRADED`; requests survive a worker outage; a broker outage returns a clear `503` with nothing half-saved.
+
+| Service detail: deploy, history, and events | A failed deployment |
+|---|---|
+| ![Service detail page for payments-api](docs/screenshots/service-detail.png) | ![analytics-service after a failed deployment](docs/screenshots/failed-deployment.png) |
+
+## Why I built this
+
+I wanted hands-on experience with the kind of work platform and operations teams do every day: Java microservices behind a REST API, a relational database with migrations, event-driven communication through a message broker, a React operations UI, containers, automated tests, and CI. DK8s puts all of these into one small, coherent system, built around **Solace PubSub+** as the event broker.
+
+## Quick start
+
+Requirements: **Docker Desktop**, running, with at least 4 GB of memory (the Solace broker needs about 2 GB).
+
+```bash
+git clone https://github.com/DanielKhojaste/dk8s.git
+cd dk8s
+docker compose up --build
+```
+
+The first run downloads images and builds the apps (a few minutes). The broker takes about a minute to start. When the logs settle, open **http://localhost:3000**.
+
+Then try it:
+
+1. **Register service** → `payments-api`, version `1.4.2`.
+2. On its page, deploy `1.5.0` and watch it go **Pending → In progress → Succeeded**, with each step in **Events**.
+3. Deploy `1.6.0-fail` to see a failed deployment: the service keeps `1.5.0` and turns **Degraded**.
+4. Stop the worker with `docker compose stop worker`, then deploy `1.7.0`: it stays **Pending**, and the page explains that no worker is connected. Run `docker compose start worker` and watch it complete.
+
+Other useful URLs and commands:
+
+| What | Where |
+|---|---|
+| DK8s console | http://localhost:3000 |
+| REST API | http://localhost:8080/api/services |
+| Solace Broker Manager (user `admin`, password `admin`) | http://localhost:8081 |
+| Stop everything | `docker compose down` (add `-v` to also delete the database) |
+
+Settings such as ports and passwords can be changed by copying `.env.example` to `.env` (see [Configuration](#configuration)). The defaults work without it.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    browser([Browser]) -->|":3000"| frontend["frontend<br/>nginx + React"]
+    frontend -->|"/api (proxy)"| api["control-api<br/>Spring Boot"]
+    api -->|JDBC| db[("PostgreSQL")]
+    api <-->|"publish topics /<br/>consume queue"| solace{{"Solace PubSub+"}}
+    worker["worker<br/>Spring Boot"] <-->|"consume queue /<br/>publish topics"| solace
+    api -.->|"SEMP v2: queue stats"| solace
+```
+
+Six containers, started by [`compose.yaml`](compose.yaml): `postgres`, `solace`, a one-off `solace-init` job that creates the queues, and the three DK8s apps. nginx serves the React build and forwards `/api` to `control-api`, so the browser only ever talks to one origin and no CORS configuration is needed.
 
 ## How a deployment flows
 
@@ -39,9 +110,7 @@ sequenceDiagram
     UI->>API: polls every second while PENDING / IN_PROGRESS
 ```
 
-`control-api` and `worker` never call each other directly. Each **publishes to topics** and **consumes from its own queue**. The broker routes each topic to the queues subscribed to it.
-
-### Topics and queues
+`control-api` and `worker` never call each other directly. Each **publishes to topics** and **consumes from its own queue**; the broker routes each topic to the queues subscribed to it.
 
 | Topic | Published by | Delivered to queue |
 |---|---|---|
@@ -51,127 +120,100 @@ sequenceDiagram
 | `dk8s/deployment/completed/{service}` | worker | `dk8s.control-api.deployment-updates` |
 | `dk8s/deployment/failed/{service}` | worker | `dk8s.control-api.deployment-updates` |
 
-Queues subscribe with wildcards (`dk8s/deployment/requested/>`), so new services need no broker changes. The queues and subscriptions are created by [`infra/solace/provision.sh`](infra/solace/provision.sh), which the `solace-init` Compose job runs through the broker's SEMP v2 management API.
+Queues subscribe with wildcards (`dk8s/deployment/requested/>`), so new services need no broker changes. The queues and subscriptions are created by [`infra/solace/provision.sh`](infra/solace/provision.sh) through the broker's SEMP v2 management API.
 
-### What happens when things fail
+## What happens when things fail
 
-- **Worker is down:** requests wait in `dk8s.worker.deployment-requests` (persistent, guaranteed delivery). The deployment stays `PENDING` until the worker starts, then completes normally. Meanwhile the service page says *No worker is connected to the deployment queue (1 request waiting)*, using live queue statistics from the broker.
-- **Broker is down:** `control-api` returns `503 Message broker unavailable` and rolls back, so no half-saved deployment is left behind.
-- **Deployment fails:** deploy a version containing `fail` (for example `1.6.0-fail`). The worker publishes `failed`, the deployment is marked `FAILED` with a reason, the service keeps its previous version and becomes `DEGRADED`.
-- **Duplicate message:** updates for a deployment that has already finished are ignored, so a redelivered message can't change anything twice.
+- **Worker is down:** requests wait in `dk8s.worker.deployment-requests` (persistent, guaranteed delivery). The deployment stays `PENDING` until a worker connects, then completes normally. Meanwhile, DK8s reads the queue's consumer count from the broker and says why it's waiting:
 
-## Prerequisites
+  ![A pending deployment explaining that no worker is connected](docs/screenshots/worker-down.png)
 
-- Java 17 or newer
-- Node.js 22.22 or newer (for the frontend)
-- Docker Desktop (running), with at least 2 CPUs and 4 GB of memory for the Solace broker
+- **Broker is down:** `control-api` returns `503 Message broker unavailable` and rolls the transaction back, so no half-saved deployment is left behind. Its health check reports `DOWN` until the broker is back.
+- **Deployment fails:** the worker publishes `failed` with a reason; the deployment is marked `FAILED`, the service keeps its previous version and becomes `DEGRADED`.
+- **Duplicate or late message:** updates for a deployment that has already finished are ignored, so a redelivered message can't change anything twice. Each queue redelivers a failed message at most 3 times.
 
-Maven doesn't need to be installed: `control-api` and `worker` include the Maven Wrapper (`./mvnw`).
+## Tech stack
 
-## Running locally
+| Area | Technology |
+|---|---|
+| Backend | Java 17, Spring Boot 4.1 (Web MVC, Data JPA, Validation, Actuator, JMS) |
+| Database | PostgreSQL 17, Flyway migrations |
+| Messaging | Solace PubSub+ Standard, Solace JMS Spring Boot starter, SEMP v2 |
+| Frontend | React 19, TypeScript, Vite, React Router, TanStack Query |
+| Containers | Docker (multi-stage builds), Docker Compose, nginx |
+| Testing | JUnit 5, Spring Boot Test, MockMvc, Testcontainers, Mockito, Vitest, Testing Library |
+| CI | GitHub Actions |
 
-Commands are for Git Bash, run from the repository root unless noted. You'll end up with three terminals: `control-api`, `worker`, and `frontend`.
+## Tests and CI
 
-**1. Create your local `.env`** (first time only)
+Every push to `main`/`dev` and every pull request runs [the CI workflow](.github/workflows/ci.yml):
 
-```bash
-cp .env.example .env
-```
+| Job | What it checks |
+|---|---|
+| `control-api` | Build + 19 tests: REST endpoints, the asynchronous deployment lifecycle, failure paths (broker down, duplicate messages), queue statistics parsing. Runs against a real PostgreSQL started by Testcontainers. |
+| `worker` | Build + 5 tests: the simulated deployment and the exact messages and topics it publishes. |
+| `frontend` | Lint, type-check, 12 component tests, production build. |
+| `docker` | Builds all three images, after the jobs above pass. |
 
-`.env` holds your local settings and is ignored by git. `.env.example` is the committed template with safe, disposable values. The defaults work as-is. If you created `.env` before Solace was added, copy the new `SOLACE_*` lines from `.env.example` into it.
+No Solace broker is needed for any test: outgoing messages are captured by a mock, incoming messages are fed to the listeners as JSON, and broker statistics come from a mock HTTP server.
 
-**2. Start PostgreSQL and Solace**
-
-```bash
-docker compose up -d postgres solace solace-init
-```
-
-Docker Compose reads `.env` automatically. Solace takes about a minute to start; `solace-init` waits for it, creates the queues, and exits.
-
-**3. Check that everything is ready**
-
-```bash
-docker compose ps -a
-docker compose logs solace-init
-```
-
-`postgres` and `solace` should say `(healthy)`, and the `solace-init` log should end with `Solace provisioning complete.` The Solace Broker Manager web UI is at `http://localhost:8081` (user `admin`, password `admin`). Under **Queues** you can watch messages arrive and leave.
-
-**4. Load `.env` into your terminal**
+Run the same checks locally:
 
 ```bash
-set -a
-source .env
-set +a
+cd control-api && ./mvnw verify   # needs Docker (Testcontainers)
+cd worker && ./mvnw verify
+cd frontend && npm ci && npm run lint && npm run typecheck && npm test
 ```
 
-Spring Boot doesn't read `.env` files. These lines export every variable in `.env` into the current Git Bash session, so Java programs started from it can see them. Run them in **each new terminal**, and again after editing `.env`.
+## Local development
 
-**5. Run the control API** (terminal 1)
+To work on one app with fast restarts, run only the infrastructure in Docker and the apps on your machine. Requirements: Java 17+, Node.js 22.22+, Docker Desktop. Maven isn't needed: each Java app includes the Maven Wrapper (`./mvnw`). Commands are for Git Bash, from the repository root.
 
 ```bash
-cd control-api
-./mvnw spring-boot:run
+cp .env.example .env                                  # first time only
+docker compose up -d postgres solace solace-init      # infrastructure only
+set -a; source .env; set +a                           # export .env into this terminal (Spring doesn't read .env)
 ```
 
-Flyway applies any pending migrations on startup. The API listens on `http://localhost:8080`.
-
-**6. Run the worker** (terminal 2, after step 4)
+Then, each in its own terminal (run the `set -a; source .env; set +a` line in each new terminal first):
 
 ```bash
-cd worker
-./mvnw spring-boot:run
+cd control-api && ./mvnw spring-boot:run              # http://localhost:8080
+cd worker && ./mvnw spring-boot:run
+cd frontend && npm install && npm run dev             # http://localhost:5173 (proxies /api to :8080)
 ```
 
-**7. Run the frontend** (terminal 3)
-
-```bash
-cd frontend
-npm install        # first time only
-npm run dev
-```
-
-Open `http://localhost:5173`. The Vite dev server forwards `/api` requests to `control-api` on port 8080. See [frontend/README.md](frontend/README.md).
-
-**8. Try it**
-
-1. Register `payments-api` at version `1.4.2`.
-2. On its page, deploy `1.5.0` and watch it go **Pending → In progress → Succeeded**, with each step in the Events list.
-3. Deploy `1.6.0-fail` to see a failed deployment.
-4. Stop the worker (`Ctrl+C`) and deploy `1.7.0`: it stays **Pending**, and the page explains that no worker is connected (the dashboard's **Messaging** panel shows the waiting request). Start the worker again and watch it complete.
+Don't run these at the same time as the full `docker compose up`: both use ports 8080 and 5432.
 
 ### Configuration
 
-All local settings live in `.env` (copied from `.env.example`):
+All settings live in `.env` (copied from `.env.example`); every value has a default.
 
 | Variable | Read by | Purpose | Default |
 |---|---|---|---|
 | `POSTGRES_DB` | Docker Compose → postgres | Database to create | `dk8s` |
 | `POSTGRES_USER` | Docker Compose → postgres | User to create | `dk8s` |
 | `POSTGRES_PASSWORD` | Docker Compose → postgres | That user's password | `dk8s` |
-| `POSTGRES_PORT` | Docker Compose | Port on your machine that forwards to PostgreSQL | `5432` |
-| `DB_URL` | control-api | JDBC URL to connect to | `jdbc:postgresql://localhost:5432/dk8s` |
-| `DB_USERNAME` | control-api | User to log in as | `dk8s` |
-| `DB_PASSWORD` | control-api | Password to log in with | `dk8s` |
-| `SOLACE_ADMIN_PASSWORD` | Docker Compose → solace, solace-init | Broker admin password | `admin` |
+| `POSTGRES_PORT` | Docker Compose | Port on your machine for PostgreSQL | `5432` |
+| `DB_URL` | control-api (local dev) | JDBC URL | `jdbc:postgresql://localhost:5432/dk8s` |
+| `DB_USERNAME` | control-api (local dev) | Database user | `dk8s` |
+| `DB_PASSWORD` | control-api (local dev) | Database password | `dk8s` |
+| `SOLACE_ADMIN_PASSWORD` | solace, solace-init, control-api | Broker admin password | `admin` |
 | `SOLACE_SMF_PORT` | Docker Compose | Port on your machine for SMF (the messaging protocol) | `55554` |
 | `SOLACE_MANAGER_PORT` | Docker Compose | Port on your machine for the Broker Manager UI | `8081` |
-| `SOLACE_HOST` | control-api, worker | Broker address | `tcp://localhost:55554` |
+| `SOLACE_HOST` | control-api, worker (local dev) | Broker address | `tcp://localhost:55554` |
 | `SOLACE_VPN` | control-api, worker | Message VPN | `default` |
 | `SOLACE_USERNAME` | control-api, worker | Client username | `default` |
 | `SOLACE_PASSWORD` | control-api, worker | Client password | `default` |
-| `SOLACE_SEMP_URL` | control-api | Broker management API, for queue statistics | `http://localhost:8081` |
-| `SOLACE_ADMIN_USERNAME` | control-api | Management API user (password: `SOLACE_ADMIN_PASSWORD`) | `admin` |
+| `SOLACE_SEMP_URL` | control-api (local dev) | Broker management API, for queue statistics | `http://localhost:8081` |
+| `SOLACE_ADMIN_USERNAME` | control-api | Management API user | `admin` |
 | `DEPLOYMENT_SIMULATION_DURATION` | worker | How long a simulated deployment takes | `3s` |
+| `CONTROL_API_PORT` | Docker Compose | Port on your machine for control-api | `8080` |
+| `FRONTEND_PORT` | Docker Compose | Port on your machine for the console | `3000` |
 
-The `DB_*` values must match the `POSTGRES_*` values, and the port in `DB_URL` must equal `POSTGRES_PORT`. Likewise, the port in `SOLACE_HOST` must equal `SOLACE_SMF_PORT`. If a variable isn't set, `compose.yaml` and each `application.yaml` fall back to the defaults above.
+When everything runs in Docker, Compose builds the apps' database and broker addresses from the `POSTGRES_*` and `SOLACE_*` values itself, so the "(local dev)" variables only matter when running the apps on your machine. There, the `DB_*` values must match `POSTGRES_*`, and the ports in `DB_URL` and `SOLACE_HOST` must match `POSTGRES_PORT` and `SOLACE_SMF_PORT`.
 
-**Changing the database password after the first start:** PostgreSQL only uses `POSTGRES_*` the first time it creates its data volume. To apply new credentials, delete the volume (this erases local data) and start again:
-
-```bash
-docker compose down -v
-docker compose up -d postgres solace solace-init
-```
+PostgreSQL only applies `POSTGRES_*` the first time it creates its data volume. To change the password later, run `docker compose down -v` (this erases local data) and start again.
 
 ## REST API
 
@@ -255,37 +297,39 @@ Errors use the standard [problem details](https://www.rfc-editor.org/rfc/rfc9457
 }
 ```
 
-## Running tests
-
-No Solace broker is needed for any tests: messaging is replaced with mocks, and incoming messages are fed to the listeners directly.
-
-```bash
-cd control-api && ./mvnw test   # needs Docker: starts a throwaway PostgreSQL container
-cd worker && ./mvnw test
-cd frontend && npm test
-```
-
 ## Project structure
 
 ```text
-compose.yaml                      PostgreSQL, Solace broker, and the solace-init job
+compose.yaml                      All services: postgres, solace, solace-init, control-api, worker, frontend
+.env.example                      Every setting, with safe local defaults
+.github/workflows/ci.yml          CI: tests, builds, Docker images
 infra/solace/provision.sh         Creates the queues and topic subscriptions (SEMP v2)
-frontend/                         React + TypeScript console (see frontend/README.md)
-control-api/
+docs/screenshots/                 Images used in this README
+control-api/                      Spring Boot REST API (Dockerfile inside)
   src/main/java/com/dk8s/controlapi/
     controller/                   REST endpoints
     service/                      Business logic
     repository/                   Database access (Spring Data JPA)
     entity/                       JPA entities and enums
     dto/                          API request/response shapes
-    messaging/                    Solace publishing, listening, and message formats
-    config/                       JMS (Solace) configuration
+    messaging/                    Solace publishing, listening, message formats, broker monitor
+    config/                       JMS and SEMP client configuration
     exception/                    Error types and JSON error handling
   src/main/resources/
     application.yaml              App configuration
-    db/migration/                 Flyway SQL migrations
-worker/
+    db/migration/                 Flyway SQL migrations (V1–V3)
+worker/                           Spring Boot deployment worker (Dockerfile inside)
   src/main/java/com/dk8s/worker/
-    messaging/                    Request listener, publisher, and message formats
+    messaging/                    Request listener, publisher, message formats
     simulation/                   The simulated deployment
+frontend/                         React + TypeScript console (Dockerfile + nginx.conf inside)
 ```
+
+## Roadmap
+
+Planned, not built yet:
+
+- **Kubernetes + Helm:** run DK8s on a local cluster and package it as a Helm chart.
+- **Real deployments:** have the worker roll out actual container versions on Kubernetes instead of simulating them.
+- **Observability:** metrics, traces, and dashboards (Prometheus, Grafana, OpenTelemetry) around the deployment flow.
+- **Messaging reliability:** dead-letter queue, retries with backoff, and idempotency keys.

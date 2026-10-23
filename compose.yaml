@@ -1,5 +1,6 @@
-# Local development infrastructure for DK8s.
-# Start with: docker compose up -d postgres solace solace-init
+# DK8s: the whole system, or just its infrastructure.
+#   Everything (open http://localhost:3000):      docker compose up --build
+#   Infrastructure only, for local development:   docker compose up -d postgres solace solace-init
 #
 # ${VAR:-default} values are filled in by Docker Compose from your shell
 # or from the .env file next to this one (copy .env.example to .env).
@@ -62,6 +63,65 @@ services:
       - ./infra/solace/provision.sh:/provision.sh:ro
     entrypoint: ["sh", "/provision.sh"]
     restart: "no"
+
+  # ---- DK8s applications (built from this repository) ----
+  # Inside Docker, the apps reach each other by service name (postgres, solace, control-api),
+  # so they're configured from the same .env values as the infrastructure above.
+
+  control-api:
+    build: ./control-api
+    container_name: dk8s-control-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      solace-init:
+        condition: service_completed_successfully
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-dk8s}
+      DB_USERNAME: ${POSTGRES_USER:-dk8s}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-dk8s}
+      SOLACE_HOST: tcp://solace:55555
+      SOLACE_VPN: ${SOLACE_VPN:-default}
+      SOLACE_USERNAME: ${SOLACE_USERNAME:-default}
+      SOLACE_PASSWORD: ${SOLACE_PASSWORD:-default}
+      SOLACE_SEMP_URL: http://solace:8080
+      SOLACE_ADMIN_USERNAME: ${SOLACE_ADMIN_USERNAME:-admin}
+      SOLACE_ADMIN_PASSWORD: ${SOLACE_ADMIN_PASSWORD:-admin}
+    ports:
+      - "${CONTROL_API_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  worker:
+    build: ./worker
+    container_name: dk8s-worker
+    depends_on:
+      solace-init:
+        condition: service_completed_successfully
+    environment:
+      SOLACE_HOST: tcp://solace:55555
+      SOLACE_VPN: ${SOLACE_VPN:-default}
+      SOLACE_USERNAME: ${SOLACE_USERNAME:-default}
+      SOLACE_PASSWORD: ${SOLACE_PASSWORD:-default}
+      DEPLOYMENT_SIMULATION_DURATION: ${DEPLOYMENT_SIMULATION_DURATION:-3s}
+    restart: unless-stopped
+
+  frontend:
+    # Built from the repository root because the build reads the root VERSION file.
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: dk8s-frontend
+    depends_on:
+      - control-api
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    restart: unless-stopped
 
 volumes:
   postgres-data:

@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.dk8s</groupId>
 	<artifactId>control-api</artifactId>
-	<version>0.2.0</version>
+	<version>0.3.0</version>
 	<name>control-api</name>
 	<description>DK8s control API: REST API for service lifecycle, deployments, and health</description>
 	<properties>
